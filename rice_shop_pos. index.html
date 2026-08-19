@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rice Shop POS</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #222;
+  }
+  header {
+    background: #176b3a; color: white; padding: 18px; text-align: center;
+  }
+  header h1 { margin: 0 0 5px; }
+  .container { max-width: 1000px; margin: auto; padding: 15px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px; }
+  .card {
+    background: white; border-radius: 12px; padding: 15px;
+    box-shadow: 0 2px 8px #0001;
+  }
+  .card small { color: #666; }
+  .card strong { display: block; font-size: 22px; margin-top: 6px; }
+  .tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; }
+  button {
+    border: 0; border-radius: 9px; padding: 11px 14px; cursor: pointer;
+    background: #176b3a; color: white; font-weight: bold;
+  }
+  button.secondary { background: #e8ecea; color: #222; }
+  button.danger { background: #c62828; }
+  .panel {
+    display: none; background: white; border-radius: 12px; padding: 16px;
+    box-shadow: 0 2px 8px #0001; margin-bottom: 15px;
+  }
+  .panel.active { display: block; }
+  input, select {
+    width: 100%; padding: 11px; margin: 6px 0 12px;
+    border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
+  }
+  label { font-weight: bold; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 650px; }
+  th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #f1f4f2; }
+  .msg { margin-top: 10px; padding: 10px; border-radius: 8px; background: #eef7f0; }
+  .profit { color: #176b3a; font-weight: bold; }
+  .loss { color: #c62828; font-weight: bold; }
+  .receipt {
+    border: 1px dashed #999; padding: 15px; margin-top: 15px;
+    white-space: pre-wrap; background: #fafafa;
+  }
+  @media (max-width: 650px) {
+    .cards { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 Rice Shop POS</h1>
+  <div>Rice sales • Stock • Profit</div>
+</header>
+
+<div class="container">
+
+  <div class="cards">
+    <div class="card"><small>Today's Sales</small><strong id="salesTotal">0 MMK</strong></div>
+    <div class="card"><small>Total Profit</small><strong id="profitTotal">0 MMK</strong></div>
+    <div class="card"><small>Total Stock</small><strong id="stockTotal">0 bags</strong></div>
+  </div>
+
+  <div class="tabs">
+    <button onclick="showPanel('sell')">🛒 Sell Rice</button>
+    <button onclick="showPanel('products')">🌾 Products</button>
+    <button onclick="showPanel('stock')">📦 Add Stock</button>
+    <button onclick="showPanel('report')">📊 Report</button>
+  </div>
+
+  <section id="sell" class="panel active">
+    <h2>Sell Rice</h2>
+    <label>Rice Product</label>
+    <select id="sellProduct"></select>
+
+    <label>Number of Bags</label>
+    <input id="sellQty" type="number" min="1" value="1" oninput="updateSalePreview()">
+
+    <label>Actual Selling Price / Bag</label>
+    <input id="actualSellPrice" type="number" min="0" value="0" oninput="updateSalePreview()">
+
+    <div class="card">
+      <div>Normal price: <b id="normalPrice">0 MMK / bag</b></div>
+      <div>Actual price: <b id="previewPrice">0 MMK / bag</b></div>
+      <div>Total sale: <b id="previewTotal">0 MMK</b></div>
+      <div>Buy cost: <b id="previewCost">0 MMK</b></div>
+      <div>Profit / Loss: <b id="previewProfit" class="profit">0 MMK</b></div>
+      <div>Stock after sale: <b id="previewStock">0 bags</b></div>
+    </div>
+
+    <button onclick="sellRice()">Confirm Sale</button>
+    <div id="saleMsg"></div>
+    <div id="receipt"></div>
+  </section>
+
+  <section id="products" class="panel">
+    <h2>Add / Manage Products</h2>
+    <div class="grid">
+      <div>
+        <label>Rice Name</label>
+        <input id="riceName" placeholder="e.g. ဆန်ရွှေဘိုပေါ်ဆန်း">
+      </div>
+      <div>
+        <label>Initial Stock (bags)</label>
+        <input id="riceStock" type="number" min="0" value="0">
+      </div>
+      <div>
+        <label>Buy Price / bag</label>
+        <input id="buyPrice" type="number" min="0" value="0">
+      </div>
+      <div>
+        <label>Sell Price / bag</label>
+        <input id="sellPrice" type="number" min="0" value="0">
+      </div>
+    </div>
+    <button onclick="addProduct()">Add Product</button>
+    <div id="productMsg"></div>
+
+    <h3>Products</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Rice</th><th>Buy/Bag</th><th>Sell/Bag</th><th>Stock</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="productTable"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="stock" class="panel">
+    <h2>Add Stock</h2>
+    <label>Rice Product</label>
+    <select id="stockProduct"></select>
+    <label>Bags to Add</label>
+    <input id="stockQty" type="number" min="1" value="1">
+    <button onclick="addStock()">Add Stock</button>
+    <div id="stockMsg"></div>
+  </section>
+
+  <section id="report" class="panel">
+    <h2>Sales Report</h2>
+    <div class="card">
+      <div>Total Sales: <b id="reportSales">0 MMK</b></div>
+      <div>Total Cost: <b id="reportCost">0 MMK</b></div>
+      <div>Total Profit: <b id="reportProfit" class="profit">0 MMK</b></div>
+      <div>Total Bags Sold: <b id="reportBags">0</b></div>
+    </div>
+    <h3>Sales History</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Rice</th><th>Bags</th><th>Price/Bag</th><th>Sale</th><th>Profit/Loss</th></tr></thead>
+        <tbody id="salesTable"></tbody>
+      </table>
+    </div>
+    <button class="danger" onclick="clearSales()">Clear Sales History</button>
+  </section>
+
+</div>
+
+<script>
+let products = JSON.parse(localStorage.getItem("riceProducts") || "[]");
+let sales = JSON.parse(localStorage.getItem("riceSales") || "[]");
+
+const money = n => Number(n).toLocaleString("en-US") + " MMK";
+
+function save() {
+  localStorage.setItem("riceProducts", JSON.stringify(products));
+  localStorage.setItem("riceSales", JSON.stringify(sales));
+}
+
+function showPanel(id) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  render();
+}
+
+function addProduct() {
+  const name = document.getElementById("riceName").value.trim();
+  const stock = Number(document.getElementById("riceStock").value);
+  const buy = Number(document.getElementById("buyPrice").value);
+  const sell = Number(document.getElementById("sellPrice").value);
+
+  if (!name || buy < 0 || sell < 0 || stock < 0) {
+    document.getElementById("productMsg").innerHTML = '<div class="msg">Please enter valid information.</div>';
+    return;
+  }
+
+  products.push({ id: Date.now(), name, buy, sell, stock });
+  save();
+  document.getElementById("riceName").value = "";
+  document.getElementById("riceStock").value = 0;
+  document.getElementById("buyPrice").value = 0;
+  document.getElementById("sellPrice").value = 0;
+  document.getElementById("productMsg").innerHTML = '<div class="msg">Product added successfully.</div>';
+  render();
+}
+
+function editPrice(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  const newSell = prompt("New selling price per bag:", p.sell);
+  if (newSell !== null && Number(newSell) >= 0) {
+    p.sell = Number(newSell);
+    save();
+    render();
+  }
+}
+
+function addStock() {
+  const id = Number(document.getElementById("stockProduct").value);
+  const qty = Number(document.getElementById("stockQty").value);
+  const p = products.find(x => x.id === id);
+
+  if (!p || qty <= 0) {
+    document.getElementById("stockMsg").innerHTML = '<div class="msg">Please select a product and enter valid bags.</div>';
+    return;
+  }
+
+  p.stock += qty;
+  save();
+  document.getElementById("stockMsg").innerHTML =
+    `<div class="msg">${p.name}: ${qty} bags added. New stock: ${p.stock} bags.</div>`;
+  render();
+}
+
+function sellRice() {
+  const id = Number(document.getElementById("sellProduct").value);
+  const qty = Number(document.getElementById("sellQty").value);
+  const actualPrice = Number(document.getElementById("actualSellPrice").value);
+  const p = products.find(x => x.id === id);
+
+  if (!p || qty <= 0 || actualPrice < 0) {
+    document.getElementById("saleMsg").innerHTML =
+      '<div class="msg">Please enter valid sale information.</div>';
+    return;
+  }
+
+  if (qty > p.stock) {
+    document.getElementById("saleMsg").innerHTML =
+      '<div class="msg">Not enough stock.</div>';
+    return;
+  }
+
+  const total = actualPrice * qty;
+  const cost = p.buy * qty;
+  const profit = total - cost;
+
+  p.stock -= qty;
+
+  const sale = {
+    date: new Date().toLocaleString(),
+    name: p.name,
+    qty,
+    actualPrice,
+    total,
+    profit,
+    cost
+  };
+
+  sales.push(sale);
+  save();
+
+  const resultClass = profit >= 0 ? "profit" : "loss";
+  const resultText = profit >= 0
+    ? `Profit: ${money(profit)}`
+    : `LOSS: ${money(Math.abs(profit))}`;
+
+  document.getElementById("saleMsg").innerHTML =
+    '<div class="msg">Sale completed successfully.</div>';
+
+  document.getElementById("receipt").innerHTML =
+    `<div class="receipt">🌾 RICE SHOP RECEIPT
+
+Rice: ${p.name}
+Bags: ${qty}
+Actual Price / Bag: ${money(actualPrice)}
+
+Total Sale: ${money(total)}
+Buy Cost: ${money(cost)}
+${resultText}
+Stock Left: ${p.stock} bags
+
+Thank you!</div>`;
+
+  render();
+
+  // Keep quantity but reset actual price to the product's normal price
+  document.getElementById("actualSellPrice").value = p.sell;
+  updateSalePreview();
+}
+function updateSalePreview() {
+  const p = products.find(x => x.id === Number(document.getElementById("sellProduct").value));
+  const qty = Number(document.getElementById("sellQty").value) || 0;
+  const actualPriceInput = document.getElementById("actualSellPrice");
+
+  if (!p) {
+    document.getElementById("normalPrice").textContent = "0 MMK / bag";
+    document.getElementById("previewPrice").textContent = "0 MMK / bag";
+    document.getElementById("previewTotal").textContent = "0 MMK";
+    document.getElementById("previewCost").textContent = "0 MMK";
+    document.getElementById("previewProfit").textContent = "0 MMK";
+    document.getElementById("previewStock").textContent = "0 bags";
+    return;
+  }
+
+  // Automatically show the normal price when selecting a product.
+  if (document.activeElement !== actualPriceInput &&
+      (actualPriceInput.value === "" || actualPriceInput.dataset.productId !== String(p.id))) {
+    actualPriceInput.value = p.sell;
+    actualPriceInput.dataset.productId = String(p.id);
+  }
+
+  const actualPrice = Number(actualPriceInput.value) || 0;
+  const total = actualPrice * qty;
+  const cost = p.buy * qty;
+  const profit = total - cost;
+
+  document.getElementById("normalPrice").textContent = money(p.sell) + " / bag";
+  document.getElementById("previewPrice").textContent = money(actualPrice) + " / bag";
+  document.getElementById("previewTotal").textContent = money(total);
+  document.getElementById("previewCost").textContent = money(cost);
+
+  const profitEl = document.getElementById("previewProfit");
+  profitEl.textContent = profit >= 0 ? money(profit) : "LOSS " + money(Math.abs(profit));
+  profitEl.className = profit >= 0 ? "profit" : "loss";
+
+  document.getElementById("previewStock").textContent =
+    Math.max(0, p.stock - qty) + " bags";
+}
+function render() {
+  const sellSelect = document.getElementById("sellProduct");
+  const stockSelect = document.getElementById("stockProduct");
+
+  sellSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+  stockSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+
+  // Set the actual sale price to the selected product's normal price.
+  const selectedProduct = products.find(p => p.id === Number(sellSelect.value));
+  const actualPriceInput = document.getElementById("actualSellPrice");
+  if (selectedProduct && actualPriceInput.dataset.productId !== String(selectedProduct.id)) {
+    actualPriceInput.value = selectedProduct.sell;
+    actualPriceInput.dataset.productId = String(selectedProduct.id);
+  }
+
+  document.getElementById("productTable").innerHTML = products.map(p =>
+    `<tr>
+      <td>${escapeHtml(p.name)}</td>
+      <td>${money(p.buy)}</td>
+      <td>${money(p.sell)}</td>
+      <td>${p.stock} bags</td>
+      <td><button class="secondary" onclick="editPrice(${p.id})">Change Sell Price</button></td>
+    </tr>`
+  ).join("");
+
+  const totalSales = sales.reduce((s, x) => s + x.total, 0);
+  const totalProfit = sales.reduce((s, x) => s + x.profit, 0);
+  const totalStock = products.reduce((s, x) => s + x.stock, 0);
+  const totalCost = sales.reduce((s, x) => s + x.cost, 0);
+  const totalBags = sales.reduce((s, x) => s + x.qty, 0);
+
+  document.getElementById("salesTotal").textContent = money(totalSales);
+  document.getElementById("profitTotal").textContent = money(totalProfit);
+  document.getElementById("stockTotal").textContent = totalStock + " bags";
+
+  document.getElementById("reportSales").textContent = money(totalSales);
+  document.getElementById("reportCost").textContent = money(totalCost);
+  document.getElementById("reportProfit").textContent = money(totalProfit);
+  document.getElementById("reportBags").textContent = totalBags;
+
+  document.getElementById("salesTable").innerHTML = sales.slice().reverse().map(x =>
+    `<tr><td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.actualPrice || (x.total / x.qty))}</td><td>${money(x.total)}</td><td class="${x.profit >= 0 ? "profit" : "loss"}">${x.profit >= 0 ? money(x.profit) : "LOSS " + money(Math.abs(x.profit))}</td></tr>`
+  ).join("");
+
+  updateSalePreview();
+}
+
+function clearSales() {
+  if (confirm("Clear all sales history? Stock will NOT be changed.")) {
+    sales = [];
+    save();
+    render();
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+render();
+</script>
+</body>
+</html>
