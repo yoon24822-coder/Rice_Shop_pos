@@ -3,404 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rice Shop POS</title>
+<meta name="theme-color" content="#6d5dfc">
+<title>Rice Business Tracker</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; font-family: Arial, sans-serif; background: #f5f6f8; color: #222;
-  }
-  header {
-    background: #176b3a; color: white; padding: 18px; text-align: center;
-  }
-  header h1 { margin: 0 0 5px; }
-  .container { max-width: 1000px; margin: auto; padding: 15px; }
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px; }
-  .card {
-    background: white; border-radius: 12px; padding: 15px;
-    box-shadow: 0 2px 8px #0001;
-  }
-  .card small { color: #666; }
-  .card strong { display: block; font-size: 22px; margin-top: 6px; }
-  .tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; }
-  button {
-    border: 0; border-radius: 9px; padding: 11px 14px; cursor: pointer;
-    background: #176b3a; color: white; font-weight: bold;
-  }
-  button.secondary { background: #e8ecea; color: #222; }
-  button.danger { background: #c62828; }
-  .panel {
-    display: none; background: white; border-radius: 12px; padding: 16px;
-    box-shadow: 0 2px 8px #0001; margin-bottom: 15px;
-  }
-  .panel.active { display: block; }
-  input, select {
-    width: 100%; padding: 11px; margin: 6px 0 12px;
-    border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
-  }
-  label { font-weight: bold; font-size: 14px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 650px; }
-  th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
-  th { background: #f1f4f2; }
-  .msg { margin-top: 10px; padding: 10px; border-radius: 8px; background: #eef7f0; }
-  .profit { color: #176b3a; font-weight: bold; }
-  .loss { color: #c62828; font-weight: bold; }
-  .receipt {
-    border: 1px dashed #999; padding: 15px; margin-top: 15px;
-    white-space: pre-wrap; background: #fafafa;
-  }
-  @media (max-width: 650px) {
-    .cards { grid-template-columns: 1fr; }
-    .grid { grid-template-columns: 1fr; }
-    header h1 { font-size: 23px; }
-  }
+:root{--primary:#6d5dfc;--bg:#f5f6fb;--card:#fff;--text:#202124;--muted:#70757a;--danger:#d93025;--ok:#188038;--border:#e5e7eb}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--primary);color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}header h1{margin:0;font-size:21px}header small{opacity:.85}
+nav{display:flex;overflow:auto;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:69px;z-index:4}
+nav button{border:0;background:none;padding:13px 15px;white-space:nowrap;font-weight:700;color:var(--muted)}nav button.active{color:var(--primary);border-bottom:3px solid var(--primary)}
+main{max-width:900px;margin:auto;padding:16px}.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px #00000008}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.stat{padding:15px;border-radius:14px;background:#fafafa;border:1px solid var(--border)}.stat b{display:block;font-size:21px;margin-top:5px}
+h2{font-size:19px;margin:5px 0 14px}h3{font-size:16px;margin:3px 0 10px}
+label{display:block;font-size:13px;font-weight:700;margin:11px 0 5px}input,select,button,textarea{font:inherit}
+input,select{width:100%;padding:11px;border:1px solid #d7d9df;border-radius:10px;background:#fff}
+button.primary,button.danger,button.secondary{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer;margin-top:12px}
+button.primary{background:var(--primary);color:#fff}button.secondary{background:#eee;color:#333}button.danger{background:#fee;color:var(--danger)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}
+.tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}.table th{background:#fafafa}
+.good{color:var(--ok);font-weight:800}.bad{color:var(--danger);font-weight:800}.muted{color:var(--muted)}.empty{text-align:center;color:var(--muted);padding:25px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:20}
+.small{font-size:12px}.dangerText{color:var(--danger)}
+@media(max-width:600px){.row{grid-template-columns:1fr}.full{grid-column:auto}main{padding:12px}}
 </style>
 </head>
 <body>
+<header><h1>🌾 Rice Business Tracker</h1><small>Purchases • Sales • Stock • Profit</small></header>
+<nav id="nav">
+<button data-page="dashboard" class="active">🏠 Home</button>
+<button data-page="products">📦 Products</button>
+<button data-page="purchases">🛒 Buy Stock</button>
+<button data-page="sales">💵 Sell</button>
+<button data-page="expenses">💸 Expenses</button>
+<button data-page="reports">📊 Reports</button>
+<button data-page="settings">⚙️ Settings</button>
+</nav>
+<main>
 
-<header>
-  <h1>🌾 Rice Shop POS</h1>
-  <div>Rice sales • Stock • Profit</div>
-</header>
+<section id="dashboard" class="page active">
+<h2>Dashboard</h2>
+<div class="grid" id="stats"></div>
+<div class="card"><h3>Low Stock</h3><div id="lowStock"></div></div>
+<div class="card"><h3>Recent Sales</h3><div id="recentSales"></div></div>
+</section>
 
-<div class="container">
-
-  <div class="cards">
-    <div class="card"><small>Today's Sales</small><strong id="salesTotal">0 MMK</strong></div>
-    <div class="card"><small>Total Profit</small><strong id="profitTotal">0 MMK</strong></div>
-    <div class="card"><small>Total Stock</small><strong id="stockTotal">0 bags</strong></div>
-  </div>
-
-  <div class="tabs">
-    <button onclick="showPanel('sell')">🛒 Sell Rice</button>
-    <button onclick="showPanel('products')">🌾 Products</button>
-    <button onclick="showPanel('stock')">📦 Add Stock</button>
-    <button onclick="showPanel('report')">📊 Report</button>
-  </div>
-
-  <section id="sell" class="panel active">
-    <h2>Sell Rice</h2>
-    <label>Rice Product</label>
-    <select id="sellProduct"></select>
-
-    <label>Number of Bags</label>
-    <input id="sellQty" type="number" min="1" value="1" oninput="updateSalePreview()">
-
-    <label>Actual Selling Price / Bag</label>
-    <input id="actualSellPrice" type="number" min="0" value="0" oninput="updateSalePreview()">
-
-    <div class="card">
-      <div>Normal price: <b id="normalPrice">0 MMK / bag</b></div>
-      <div>Actual price: <b id="previewPrice">0 MMK / bag</b></div>
-      <div>Total sale: <b id="previewTotal">0 MMK</b></div>
-      <div>Buy cost: <b id="previewCost">0 MMK</b></div>
-      <div>Profit / Loss: <b id="previewProfit" class="profit">0 MMK</b></div>
-      <div>Stock after sale: <b id="previewStock">0 bags</b></div>
-    </div>
-
-    <button onclick="sellRice()">Confirm Sale</button>
-    <div id="saleMsg"></div>
-    <div id="receipt"></div>
-  </section>
-
-  <section id="products" class="panel">
-    <h2>Add / Manage Products</h2>
-    <div class="grid">
-      <div>
-        <label>Rice Name</label>
-        <input id="riceName" placeholder="e.g. ဆန်ရွှေဘိုပေါ်ဆန်း">
-      </div>
-      <div>
-        <label>Initial Stock (bags)</label>
-        <input id="riceStock" type="number" min="0" value="0">
-      </div>
-      <div>
-        <label>Buy Price / bag</label>
-        <input id="buyPrice" type="number" min="0" value="0">
-      </div>
-      <div>
-        <label>Sell Price / bag</label>
-        <input id="sellPrice" type="number" min="0" value="0">
-      </div>
-    </div>
-    <button onclick="addProduct()">Add Product</button>
-    <div id="productMsg"></div>
-
-    <h3>Products</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Rice</th><th>Buy/Bag</th><th>Sell/Bag</th><th>Stock</th><th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="productTable"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="stock" class="panel">
-    <h2>Add Stock</h2>
-    <label>Rice Product</label>
-    <select id="stockProduct"></select>
-    <label>Bags to Add</label>
-    <input id="stockQty" type="number" min="1" value="1">
-    <button onclick="addStock()">Add Stock</button>
-    <div id="stockMsg"></div>
-  </section>
-
-  <section id="report" class="panel">
-    <h2>Sales Report</h2>
-    <div class="card">
-      <div>Total Sales: <b id="reportSales">0 MMK</b></div>
-      <div>Total Cost: <b id="reportCost">0 MMK</b></div>
-      <div>Total Profit: <b id="reportProfit" class="profit">0 MMK</b></div>
-      <div>Total Bags Sold: <b id="reportBags">0</b></div>
-    </div>
-    <h3>Sales History</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Rice</th><th>Bags</th><th>Price/Bag</th><th>Sale</th><th>Profit/Loss</th></tr></thead>
-        <tbody id="salesTable"></tbody>
-      </table>
-    </div>
-    <button class="danger" onclick="clearSales()">Clear Sales History</button>
-  </section>
-
+<section id="products" class="page">
+<div class="card"><h2>Add Product</h2>
+<div class="row">
+<div><label>Product name</label><input id="pName" placeholder="e.g. Premium Rice"></div>
+<div><label>Unit</label><input id="pUnit" value="bag" placeholder="bag, kg, basket..."></div>
+<div><label>Low-stock warning</label><input id="pLow" type="number" value="5" min="0"></div>
 </div>
+<button class="primary" onclick="addProduct()">Add Product</button>
+<p class="small muted">Buy prices are NOT stored here. Add the current buy price each time you purchase new stock.</p>
+</div>
+<div class="card"><h2>Your Products</h2><div id="productList"></div></div>
+</section>
+
+<section id="purchases" class="page">
+<div class="card"><h2>🛒 Add New Stock</h2>
+<div class="row">
+<div><label>Product</label><select id="buyProduct"></select></div>
+<div><label>Quantity</label><input id="buyQty" type="number" min="0.01" step="0.01"></div>
+<div><label>New buy price per unit (MMK)</label><input id="buyPrice" type="number" min="0" step="1"></div>
+<div><label>Date</label><input id="buyDate" type="date"></div>
+</div>
+<button class="primary" onclick="addPurchase()">Save Purchase</button>
+</div>
+<div class="card"><h2>Purchase History</h2><div id="purchaseList"></div></div>
+</section>
+
+<section id="sales" class="page">
+<div class="card"><h2>💵 Record a Sale</h2>
+<div class="row">
+<div><label>Product</label><select id="saleProduct" onchange="showSaleInfo()"></select></div>
+<div><label>Quantity</label><input id="saleQty" type="number" min="0.01" step="0.01" oninput="showSaleInfo()"></div>
+<div><label>Actual selling price per unit (MMK)</label><input id="salePrice" type="number" min="0" step="1" oninput="showSaleInfo()"></div>
+<div><label>Date</label><input id="saleDate" type="date"></div>
+<div><label>Customer (optional)</label><input id="customer" placeholder="Customer name"></div>
+</div>
+<div class="card" style="background:#fafafa;margin-top:12px"><div id="salePreview">Enter quantity and actual selling price.</div></div>
+<button class="primary" onclick="addSale()">Save Sale</button>
+</div>
+<div class="card"><h2>Sales History</h2><div id="saleList"></div></div>
+</section>
+
+<section id="expenses" class="page">
+<div class="card"><h2>💸 Add Expense</h2>
+<div class="row">
+<div><label>Expense name</label><input id="eName" placeholder="Delivery / transport"></div>
+<div><label>Amount (MMK)</label><input id="eAmount" type="number" min="0"></div>
+<div><label>Date</label><input id="eDate" type="date"></div>
+</div>
+<button class="primary" onclick="addExpense()">Save Expense</button>
+</div>
+<div class="card"><h2>Expense History</h2><div id="expenseList"></div></div>
+</section>
+
+<section id="reports" class="page">
+<div class="card"><h2>📊 Business Summary</h2><div id="report"></div></div>
+<div class="card"><h2>Current Stock</h2><div id="stockReport"></div></div>
+</section>
+
+<section id="settings" class="page">
+<div class="card"><h2>⚙️ Settings</h2>
+<label>Profit cost method</label>
+<select id="costMethod" onchange="changeCostMethod()">
+<option value="average">Average cost</option>
+<option value="fifo">FIFO (oldest stock first)</option>
+</select>
+<p class="small muted">Average cost is simpler. FIFO uses the oldest purchase batches first when calculating each sale.</p>
+</div>
+<div class="card"><h2>💾 Backup & Restore</h2>
+<p class="small muted">Keep a backup so you can restore your records if you change phone or browser.</p>
+<button class="primary" onclick="backup()">📤 Download Backup</button>
+<input id="restoreFile" type="file" accept=".json" style="margin-top:12px" onchange="restore(event)">
+</div>
+<div class="card"><h2>Danger Zone</h2><button class="danger" onclick="clearAll()">Delete ALL business data</button></div>
+</section>
+</main>
+<div id="toast" class="toast"></div>
 
 <script>
-let products = JSON.parse(localStorage.getItem("riceProducts") || "[]");
-let sales = JSON.parse(localStorage.getItem("riceSales") || "[]");
+const KEY="riceBusinessTrackerV2";
+let db=JSON.parse(localStorage.getItem(KEY)||'{"products":[],"purchases":[],"sales":[],"expenses":[],"settings":{"costMethod":"average"}}');
+const today=new Date().toISOString().slice(0,10);
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.page).classList.add("active");render()});
+document.querySelectorAll('input[type="date"]').forEach(x=>x.value=today);
+document.getElementById("costMethod").value=db.settings.costMethod;
 
-const money = n => Number(n).toLocaleString("en-US") + " MMK";
-
-function save() {
-  localStorage.setItem("riceProducts", JSON.stringify(products));
-  localStorage.setItem("riceSales", JSON.stringify(sales));
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function money(n){return Number(n||0).toLocaleString()+" MMK"}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function toast(s){let t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",1800)}
+function product(id){return db.products.find(p=>p.id===id)}
+function stock(id){return db.purchases.filter(x=>x.productId===id).reduce((a,x)=>a+Number(x.qty),0)-db.sales.filter(x=>x.productId===id).reduce((a,x)=>a+Number(x.qty),0)}
+function avgCost(id){let ps=db.purchases.filter(x=>x.productId===id);let q=ps.reduce((a,x)=>a+Number(x.qty),0);return q?ps.reduce((a,x)=>a+Number(x.qty)*Number(x.price),0)/q:0}
+function costForSale(id,qty){
+ qty=Number(qty); if(db.settings.costMethod==="average") return avgCost(id)*qty;
+ let batches=db.purchases.filter(x=>x.productId===id).sort((a,b)=>a.date.localeCompare(b.date)||a.created-b.created);
+ let sold=db.sales.filter(x=>x.productId===id).sort((a,b)=>a.date.localeCompare(b.date)||a.created-b.created);
+ let remaining=batches.map(b=>({id:b.id,qty:Number(b.qty),price:Number(b.price)}));
+ for(const s of sold){let q=Number(s.qty);for(const b of remaining){if(q<=0)break;let used=Math.min(b.qty,q);b.qty-=used;q-=used}}
+ let need=qty,total=0;for(const b of remaining){if(need<=0)break;let used=Math.min(b.qty,need);total+=used*b.price;need-=used}
+ return total;
 }
-
-function showPanel(id) {
-  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-  render();
+function addProduct(){let n=document.getElementById("pName").value.trim();if(!n)return alert("Enter a product name.");db.products.push({id:crypto.randomUUID(),name:n,unit:document.getElementById("pUnit").value.trim()||"unit",low:Number(document.getElementById("pLow").value)||0});document.getElementById("pName").value="";save();toast("Product added")}
+function addPurchase(){let id=document.getElementById("buyProduct").value,q=Number(document.getElementById("buyQty").value),price=Number(document.getElementById("buyPrice").value),date=document.getElementById("buyDate").value;if(!id||q<=0||price<0||!date)return alert("Fill in product, quantity, buy price and date.");db.purchases.push({id:crypto.randomUUID(),productId:id,qty:q,price,date,created:Date.now()});save();document.getElementById("buyQty").value="";document.getElementById("buyPrice").value="";toast("New stock added")}
+function showSaleInfo(){let id=document.getElementById("saleProduct").value,q=Number(document.getElementById("saleQty").value),sp=Number(document.getElementById("salePrice").value),s=stock(id),cost=costForSale(id,q);document.getElementById("salePreview").innerHTML=`Available stock: <b>${s}</b><br>Estimated cost: <b>${money(cost)}</b><br>Estimated profit: <b class="${sp*q-cost>=0?'good':'bad'}">${money(sp*q-cost)}</b>`}
+function addSale(){let id=document.getElementById("saleProduct").value,q=Number(document.getElementById("saleQty").value),sp=Number(document.getElementById("salePrice").value),date=document.getElementById("saleDate").value;if(!id||q<=0||sp<0||!date)return alert("Fill in product, quantity, selling price and date.");if(q>stock(id)+1e-9)return alert("Not enough stock.");let cost=costForSale(id,q);db.sales.push({id:crypto.randomUUID(),productId:id,qty:q,sellPrice:sp,cost,date,customer:document.getElementById("customer").value.trim(),created:Date.now()});save();document.getElementById("saleQty").value="";document.getElementById("salePrice").value="";document.getElementById("customer").value="";toast("Sale recorded")}
+function addExpense(){let n=document.getElementById("eName").value.trim(),a=Number(document.getElementById("eAmount").value),date=document.getElementById("eDate").value;if(!n||a<0||!date)return alert("Fill in expense, amount and date.");db.expenses.push({id:crypto.randomUUID(),name:n,amount:a,date});save();document.getElementById("eName").value="";document.getElementById("eAmount").value="";toast("Expense saved")}
+function del(type,id){if(!confirm("Delete this record?"))return;db[type]=db[type].filter(x=>x.id!==id);save()}
+function renderSelects(){let opts=db.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");document.getElementById("buyProduct").innerHTML=opts||'<option value="">Add a product first</option>';document.getElementById("saleProduct").innerHTML=opts||'<option value="">Add a product first</option>'}
+function table(headers,rows){return rows.length?`<div class="tablewrap"><table class="table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`:'<div class="empty">No records yet.</div>'}
+function render(){
+ renderSelects();
+ let sales=db.sales,purchases=db.purchases,expenses=db.expenses,totalSales=sales.reduce((a,x)=>a+x.qty*x.sellPrice,0),totalCost=sales.reduce((a,x)=>a+x.cost,0),exp=expenses.reduce((a,x)=>a+x.amount,0),profit=totalSales-totalCost-exp;
+ document.getElementById("stats").innerHTML=`<div class="stat">Sales<b>${money(totalSales)}</b></div><div class="stat">Cost of goods<b>${money(totalCost)}</b></div><div class="stat">Expenses<b>${money(exp)}</b></div><div class="stat">Net profit<b class="${profit>=0?'good':'bad'}">${money(profit)}</b></div>`;
+ let low=db.products.filter(p=>stock(p.id)<=p.low);document.getElementById("lowStock").innerHTML=low.length?low.map(p=>`<div>${esc(p.name)} — <b>${stock(p.id)} ${esc(p.unit)}</b></div>`).join(""):"<div class='muted'>All stock levels look good 👍</div>";
+ document.getElementById("recentSales").innerHTML=table(["Date","Product","Qty","Sold","Profit"],sales.slice().sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).slice(0,5).map(s=>`<tr><td>${s.date}</td><td>${esc(product(s.productId)?.name||"Deleted")}</td><td>${s.qty}</td><td>${money(s.qty*s.sellPrice)}</td><td class="${s.qty*s.sellPrice-s.cost>=0?'good':'bad'}">${money(s.qty*s.sellPrice-s.cost)}</td></tr>`));
+ document.getElementById("productList").innerHTML=table(["Product","Stock","Avg buy cost","Unit",""],db.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${stock(p.id)}</td><td>${money(avgCost(p.id))}</td><td>${esc(p.unit)}</td><td><button class="danger" onclick="del('products','${p.id}')">Delete</button></td></tr>`));
+ document.getElementById("purchaseList").innerHTML=table(["Date","Product","Qty","Buy price","Total",""],purchases.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.date}</td><td>${esc(product(x.productId)?.name||"Deleted")}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.qty*x.price)}</td><td><button class="danger" onclick="del('purchases','${x.id}')">Delete</button></td></tr>`));
+ document.getElementById("saleList").innerHTML=table(["Date","Product","Qty","Actual sell","Cost","Profit","Customer",""],sales.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.date}</td><td>${esc(product(x.productId)?.name||"Deleted")}</td><td>${x.qty}</td><td>${money(x.sellPrice)}</td><td>${money(x.cost)}</td><td class="${x.qty*x.sellPrice-x.cost>=0?'good':'bad'}">${money(x.qty*x.sellPrice-x.cost)}</td><td>${esc(x.customer||"-")}</td><td><button class="danger" onclick="del('sales','${x.id}')">Delete</button></td></tr>`));
+ document.getElementById("expenseList").innerHTML=table(["Date","Expense","Amount",""],expenses.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.date}</td><td>${esc(x.name)}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="del('expenses','${x.id}')">Delete</button></td></tr>`));
+ document.getElementById("report").innerHTML=`<div class="grid"><div class="stat">Total sales<b>${money(totalSales)}</b></div><div class="stat">Gross profit<b class="${totalSales-totalCost>=0?'good':'bad'}">${money(totalSales-totalCost)}</b></div><div class="stat">Expenses<b>${money(exp)}</b></div><div class="stat">Net profit<b class="${profit>=0?'good':'bad'}">${money(profit)}</b></div></div>`;
+ document.getElementById("stockReport").innerHTML=table(["Product","Stock","Average buy cost","Stock value"],db.products.map(p=>`<tr><td>${esc(p.name)}</td><td>${stock(p.id)} ${esc(p.unit)}</td><td>${money(avgCost(p.id))}</td><td>${money(stock(p.id)*avgCost(p.id))}</td></tr>`));
+ showSaleInfo();
 }
-
-function addProduct() {
-  const name = document.getElementById("riceName").value.trim();
-  const stock = Number(document.getElementById("riceStock").value);
-  const buy = Number(document.getElementById("buyPrice").value);
-  const sell = Number(document.getElementById("sellPrice").value);
-
-  if (!name || buy < 0 || sell < 0 || stock < 0) {
-    document.getElementById("productMsg").innerHTML = '<div class="msg">Please enter valid information.</div>';
-    return;
-  }
-
-  products.push({ id: Date.now(), name, buy, sell, stock });
-  save();
-  document.getElementById("riceName").value = "";
-  document.getElementById("riceStock").value = 0;
-  document.getElementById("buyPrice").value = 0;
-  document.getElementById("sellPrice").value = 0;
-  document.getElementById("productMsg").innerHTML = '<div class="msg">Product added successfully.</div>';
-  render();
-}
-
-function editPrice(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  const newSell = prompt("New selling price per bag:", p.sell);
-  if (newSell !== null && Number(newSell) >= 0) {
-    p.sell = Number(newSell);
-    save();
-    render();
-  }
-}
-
-function addStock() {
-  const id = Number(document.getElementById("stockProduct").value);
-  const qty = Number(document.getElementById("stockQty").value);
-  const p = products.find(x => x.id === id);
-
-  if (!p || qty <= 0) {
-    document.getElementById("stockMsg").innerHTML = '<div class="msg">Please select a product and enter valid bags.</div>';
-    return;
-  }
-
-  p.stock += qty;
-  save();
-  document.getElementById("stockMsg").innerHTML =
-    `<div class="msg">${p.name}: ${qty} bags added. New stock: ${p.stock} bags.</div>`;
-  render();
-}
-
-function sellRice() {
-  const id = Number(document.getElementById("sellProduct").value);
-  const qty = Number(document.getElementById("sellQty").value);
-  const actualPrice = Number(document.getElementById("actualSellPrice").value);
-  const p = products.find(x => x.id === id);
-
-  if (!p || qty <= 0 || actualPrice < 0) {
-    document.getElementById("saleMsg").innerHTML =
-      '<div class="msg">Please enter valid sale information.</div>';
-    return;
-  }
-
-  if (qty > p.stock) {
-    document.getElementById("saleMsg").innerHTML =
-      '<div class="msg">Not enough stock.</div>';
-    return;
-  }
-
-  const total = actualPrice * qty;
-  const cost = p.buy * qty;
-  const profit = total - cost;
-
-  p.stock -= qty;
-
-  const sale = {
-    date: new Date().toLocaleString(),
-    name: p.name,
-    qty,
-    actualPrice,
-    total,
-    profit,
-    cost
-  };
-
-  sales.push(sale);
-  save();
-
-  const resultClass = profit >= 0 ? "profit" : "loss";
-  const resultText = profit >= 0
-    ? `Profit: ${money(profit)}`
-    : `LOSS: ${money(Math.abs(profit))}`;
-
-  document.getElementById("saleMsg").innerHTML =
-    '<div class="msg">Sale completed successfully.</div>';
-
-  document.getElementById("receipt").innerHTML =
-    `<div class="receipt">🌾 RICE SHOP RECEIPT
-
-Rice: ${p.name}
-Bags: ${qty}
-Actual Price / Bag: ${money(actualPrice)}
-
-Total Sale: ${money(total)}
-Buy Cost: ${money(cost)}
-${resultText}
-Stock Left: ${p.stock} bags
-
-Thank you!</div>`;
-
-  render();
-
-  // Keep quantity but reset actual price to the product's normal price
-  document.getElementById("actualSellPrice").value = p.sell;
-  updateSalePreview();
-}
-function updateSalePreview() {
-  const p = products.find(x => x.id === Number(document.getElementById("sellProduct").value));
-  const qty = Number(document.getElementById("sellQty").value) || 0;
-  const actualPriceInput = document.getElementById("actualSellPrice");
-
-  if (!p) {
-    document.getElementById("normalPrice").textContent = "0 MMK / bag";
-    document.getElementById("previewPrice").textContent = "0 MMK / bag";
-    document.getElementById("previewTotal").textContent = "0 MMK";
-    document.getElementById("previewCost").textContent = "0 MMK";
-    document.getElementById("previewProfit").textContent = "0 MMK";
-    document.getElementById("previewStock").textContent = "0 bags";
-    return;
-  }
-
-  // Automatically show the normal price when selecting a product.
-  if (document.activeElement !== actualPriceInput &&
-      (actualPriceInput.value === "" || actualPriceInput.dataset.productId !== String(p.id))) {
-    actualPriceInput.value = p.sell;
-    actualPriceInput.dataset.productId = String(p.id);
-  }
-
-  const actualPrice = Number(actualPriceInput.value) || 0;
-  const total = actualPrice * qty;
-  const cost = p.buy * qty;
-  const profit = total - cost;
-
-  document.getElementById("normalPrice").textContent = money(p.sell) + " / bag";
-  document.getElementById("previewPrice").textContent = money(actualPrice) + " / bag";
-  document.getElementById("previewTotal").textContent = money(total);
-  document.getElementById("previewCost").textContent = money(cost);
-
-  const profitEl = document.getElementById("previewProfit");
-  profitEl.textContent = profit >= 0 ? money(profit) : "LOSS " + money(Math.abs(profit));
-  profitEl.className = profit >= 0 ? "profit" : "loss";
-
-  document.getElementById("previewStock").textContent =
-    Math.max(0, p.stock - qty) + " bags";
-}
-function render() {
-  const sellSelect = document.getElementById("sellProduct");
-  const stockSelect = document.getElementById("stockProduct");
-
-  sellSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
-  stockSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
-
-  // Set the actual sale price to the selected product's normal price.
-  const selectedProduct = products.find(p => p.id === Number(sellSelect.value));
-  const actualPriceInput = document.getElementById("actualSellPrice");
-  if (selectedProduct && actualPriceInput.dataset.productId !== String(selectedProduct.id)) {
-    actualPriceInput.value = selectedProduct.sell;
-    actualPriceInput.dataset.productId = String(selectedProduct.id);
-  }
-
-  document.getElementById("productTable").innerHTML = products.map(p =>
-    `<tr>
-      <td>${escapeHtml(p.name)}</td>
-      <td>${money(p.buy)}</td>
-      <td>${money(p.sell)}</td>
-      <td>${p.stock} bags</td>
-      <td><button class="secondary" onclick="editPrice(${p.id})">Change Sell Price</button></td>
-    </tr>`
-  ).join("");
-
-  const totalSales = sales.reduce((s, x) => s + x.total, 0);
-  const totalProfit = sales.reduce((s, x) => s + x.profit, 0);
-  const totalStock = products.reduce((s, x) => s + x.stock, 0);
-  const totalCost = sales.reduce((s, x) => s + x.cost, 0);
-  const totalBags = sales.reduce((s, x) => s + x.qty, 0);
-
-  document.getElementById("salesTotal").textContent = money(totalSales);
-  document.getElementById("profitTotal").textContent = money(totalProfit);
-  document.getElementById("stockTotal").textContent = totalStock + " bags";
-
-  document.getElementById("reportSales").textContent = money(totalSales);
-  document.getElementById("reportCost").textContent = money(totalCost);
-  document.getElementById("reportProfit").textContent = money(totalProfit);
-  document.getElementById("reportBags").textContent = totalBags;
-
-  document.getElementById("salesTable").innerHTML = sales.slice().reverse().map(x =>
-    `<tr><td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${money(x.actualPrice || (x.total / x.qty))}</td><td>${money(x.total)}</td><td class="${x.profit >= 0 ? "profit" : "loss"}">${x.profit >= 0 ? money(x.profit) : "LOSS " + money(Math.abs(x.profit))}</td></tr>`
-  ).join("");
-
-  updateSalePreview();
-}
-
-function clearSales() {
-  if (confirm("Clear all sales history? Stock will NOT be changed.")) {
-    sales = [];
-    save();
-    render();
-  }
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-  }[c]));
-}
-
+function changeCostMethod(){db.settings.costMethod=document.getElementById("costMethod").value;save();toast("Cost method updated")}
+function backup(){let blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rice-business-backup-"+today+".json";a.click();URL.revokeObjectURL(a.href)}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.products||!x.purchases||!x.sales||!x.expenses)throw 0;db=x;save();toast("Backup restored")}catch{alert("That backup file is not valid.")}};r.readAsText(f)}
+function clearAll(){if(confirm("This will permanently delete all products, purchases, sales and expenses from this browser. Continue?")){localStorage.removeItem(KEY);location.reload()}}
 render();
 </script>
 </body>
